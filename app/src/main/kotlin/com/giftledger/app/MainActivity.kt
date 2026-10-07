@@ -34,7 +34,6 @@ class MainActivity : Activity() {
         val bg = Color.parseColor("#F5F4F0")
         window.statusBarColor = bg
         window.navigationBarColor = Color.WHITE
-        useDarkSystemBarIcons()
 
         // Android 15(targetSdk 35)부터는 화면이 상태바·내비게이션 바 아래까지 그려집니다.
         // 시스템 바(와 키보드) 높이만큼 안쪽 여백을 줘서 앱 화면이 가려지지 않게 합니다.
@@ -48,6 +47,8 @@ class MainActivity : Activity() {
             setOnApplyWindowInsetsListener { v, insets -> v.applySystemBarPadding(insets); insets }
         }
         setContentView(root)
+        // DecorView는 setContentView 이후에 생기므로, 시스템 바 아이콘 설정은 반드시 이 다음에 호출
+        useDarkSystemBarIcons()
 
         webView.settings.apply {
             javaScriptEnabled = true
