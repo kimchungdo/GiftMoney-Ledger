@@ -4,10 +4,16 @@ import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Insets;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.view.View;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
+import android.widget.FrameLayout;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -35,10 +41,32 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().setStatusBarColor(Color.parseColor("#F5F4F0"));
+        int bg = Color.parseColor("#F5F4F0");
+        getWindow().setStatusBarColor(bg);
+        getWindow().setNavigationBarColor(Color.WHITE);
+        useDarkSystemBarIcons();
 
+        // Android 15(targetSdk 35)부터는 화면이 상태바·내비게이션 바 아래까지 그려집니다.
+        // 시스템 바(와 키보드) 높이만큼 안쪽 여백을 줘서 앱 화면이 가려지지 않게 합니다.
+        FrameLayout root = new FrameLayout(this);
+        root.setBackgroundColor(bg);
         webView = new WebView(this);
-        setContentView(webView);
+        root.addView(webView, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        root.setOnApplyWindowInsetsListener((v, insets) -> {
+            int l, t, r, b;
+            if (Build.VERSION.SDK_INT >= 30) {
+                Insets bars = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+                Insets ime = insets.getInsets(WindowInsets.Type.ime());
+                l = bars.left; t = bars.top; r = bars.right; b = Math.max(bars.bottom, ime.bottom);
+            } else {
+                l = insets.getSystemWindowInsetLeft(); t = insets.getSystemWindowInsetTop();
+                r = insets.getSystemWindowInsetRight(); b = insets.getSystemWindowInsetBottom();
+            }
+            v.setPadding(l, t, r, b);
+            return insets;
+        });
+        setContentView(root);
 
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
@@ -68,6 +96,22 @@ public class MainActivity extends Activity {
         });
         webView.addJavascriptInterface(new Bridge(), "Android");
         webView.loadDataWithBaseURL(BASE_URL, readAsset("index.html"), "text/html", "utf-8", null);
+    }
+
+    /** 밝은 배경 위에서 상태바·내비게이션 바 아이콘이 보이도록 어두운 아이콘 사용 */
+    @SuppressWarnings("deprecation")
+    private void useDarkSystemBarIcons() {
+        if (Build.VERSION.SDK_INT >= 30) {
+            WindowInsetsController c = getWindow().getInsetsController();
+            if (c != null) {
+                int f = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                        | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+                c.setSystemBarsAppearance(f, f);
+            }
+        } else {
+            getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+        }
     }
 
     private String readAsset(String name) {
