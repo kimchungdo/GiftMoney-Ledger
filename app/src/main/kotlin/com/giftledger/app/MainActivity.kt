@@ -44,7 +44,8 @@ class MainActivity : Activity() {
                 webView,
                 FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
             )
-            setOnApplyWindowInsetsListener { v, insets -> v.applySystemBarPadding(insets); insets }
+            // 여백은 여기서 한 번만 적용하고, 안쪽 WebView에는 넘기지 않음(넘기면 CSS safe-area로 이중 적용됨)
+            setOnApplyWindowInsetsListener { v, insets -> v.applySystemBarPadding(insets); consumed(insets) }
         }
         setContentView(root)
         // DecorView는 setContentView 이후에 생기므로, 시스템 바 아이콘 설정은 반드시 이 다음에 호출
@@ -98,6 +99,11 @@ class MainActivity : Activity() {
             )
         }
     }
+
+    @Suppress("DEPRECATION")
+    private fun consumed(insets: WindowInsets): WindowInsets =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) WindowInsets.CONSUMED
+        else insets.consumeSystemWindowInsets()
 
     /** 밝은 배경 위에서 상태바·내비게이션 바 아이콘이 보이도록 어두운 아이콘 사용 */
     @Suppress("DEPRECATION")
