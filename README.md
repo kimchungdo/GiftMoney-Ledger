@@ -1,4 +1,4 @@
-# 경조사비 장부 (GiftLedger) · 안드로이드 프로토타입 v0.1.0
+# 경조사비 장부 (GiftLedger) · 안드로이드 프로토타입 v0.2.0
 
 경조사비를 주고받은 기록을 휴대폰 안에 저장하고 추가·조회·수정·삭제하는 앱입니다.
 데이터 구조는 구글 시트 `GiftMoney_Ledger_Master`의 `ledger`, `events` 탭(스키마 v2)과 같습니다.
@@ -18,7 +18,7 @@
 
 ```
 app/src/main/assets/index.html   ← 앱 화면과 기능 전체 (HTML/JS, 외부 라이브러리 없음)
-app/src/main/java/.../MainActivity.java ← 화면을 띄우는 껍데기 + 파일 선택/저장 연결
+app/src/main/kotlin/.../MainActivity.kt   ← 화면을 띄우는 껍데기 + 파일 선택/저장 연결 (Kotlin)
 ```
 
 화면을 고치려면 `index.html`만 수정하면 됩니다. PC 브라우저에서 그대로 열어 미리 볼 수도 있습니다.
