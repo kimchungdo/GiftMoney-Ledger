@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>경조사비 장부</title>
+<style>
+:root{
+  --bg:#f5f4f0; --card:#ffffff; --ink:#1d1f23; --sub:#6b6f76; --line:#e5e3dd;
+  --accent:#3b4a5c; --recv:#1f5fbf; --give:#c2410c; --ok:#15803d; --warn:#b45309; --danger:#b91c1c;
+  --chip:#ecebe6;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;font-size:15px}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding:14px 16px 8px}
+header h1{margin:0;font-size:20px;font-weight:700;letter-spacing:-.3px}
+header .hsub{color:var(--sub);font-size:12px;margin-top:2px}
+main{padding:0 16px 96px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:6}
+nav button{flex:1;border:0;background:none;padding:10px 0 12px;font-size:12px;color:var(--sub);display:flex;flex-direction:column;align-items:center;gap:3px}
+nav button svg{width:22px;height:22px}
+nav button.on{color:var(--accent);font-weight:700}
+.search{display:flex;gap:8px;margin:4px 0 10px}
+input,select,textarea{font:inherit;color:inherit;width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-size:13px;color:var(--ink)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.stat{background:var(--card);border-radius:12px;padding:10px 12px}
+.stat .k{font-size:11px;color:var(--sub)}
+.stat .v{font-size:15px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{background:var(--card);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid transparent}
+.item:active{border-color:var(--line)}
+.item .t{font-weight:600}
+.item .s{color:var(--sub);font-size:12.5px;margin-top:3px;line-height:1.4}
+.amt{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.amt small{display:block;font-weight:500;font-size:11px;color:var(--sub)}
+.recv{color:var(--recv)} .give{color:var(--give)}
+.badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--chip);color:var(--sub);margin-left:4px;font-weight:500;vertical-align:1px}
+.badge.ok{background:#dcfce7;color:var(--ok)} .badge.no{background:#fef3c7;color:var(--warn)}
+.empty{color:var(--sub);text-align:center;padding:40px 10px;line-height:1.6}
+.fab{position:fixed;right:18px;bottom:84px;width:56px;height:56px;border-radius:18px;border:0;background:var(--accent);color:#fff;font-size:28px;box-shadow:0 6px 18px rgba(0,0,0,.18);z-index:4}
+.sec{font-size:12px;color:var(--sub);margin:18px 2px 8px;font-weight:600}
+/* sheet */
+.sheet{position:fixed;inset:0;background:var(--bg);z-index:20;display:none;flex-direction:column}
+.sheet.open{display:flex}
+.sheet .bar{display:flex;align-items:center;justify-content:space-between;padding:12px 8px 12px 4px;border-bottom:1px solid var(--line);background:#fff}
+.sheet .bar h2{font-size:17px;margin:0;flex:1;padding-left:4px}
+.sheet .body{flex:1;overflow:auto;padding:14px 16px 40px}
+.iconbtn{border:0;background:none;padding:8px 10px;font-size:15px;color:var(--accent)}
+.iconbtn.danger{color:var(--danger)}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12.5px;color:var(--sub);margin-bottom:6px;font-weight:600}
+.field label .req{color:var(--danger)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;font-size:14px}
+.seg button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.seg.dir button.on[data-v="받음"]{background:var(--recv);border-color:var(--recv)}
+.seg.dir button.on[data-v="줌"]{background:var(--give);border-color:var(--give)}
+.btn{width:100%;border:0;border-radius:12px;padding:14px;font-size:16px;font-weight:700;background:var(--accent);color:#fff;margin-top:6px}
+.btn.ghost{background:#fff;color:var(--accent);border:1px solid var(--line)}
+.btn.danger{background:#fff;color:var(--danger);border:1px solid #f1c4c4}
+.err{color:var(--danger);font-size:12.5px;margin-top:5px;display:none}
+.field.bad .err{display:block}
+.field.bad input,.field.bad select{border-color:var(--danger)}
+.card{background:var(--card);border-radius:12px;padding:14px;margin-bottom:10px}
+.card h3{margin:0 0 6px;font-size:15px}
+.card p{margin:0;color:var(--sub);font-size:13px;line-height:1.5}
+.kv{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
+.kv:last-child{border-bottom:0}
+.kv b{font-variant-numeric:tabular-nums}
+.toast{position:fixed;left:50%;bottom:150px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:10px;font-size:13.5px;opacity:0;transition:opacity .2s;z-index:40;pointer-events:none;max-width:86vw;text-align:center}
+.toast.show{opacity:1}
+.hint{font-size:12px;color:var(--sub);margin-top:5px}
+</style>
+</head>
+<body>
+<header><h1 id="title">기록</h1><div class="hsub" id="hsub"></div></header>
+<main id="main"></main>
+<button class="fab" id="fab" aria-label="추가">+</button>
+<nav id="nav">
+  <button data-tab="records" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>기록</button>
+  <button data-tab="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>행사</button>
+  <button data-tab="people"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>사람</button>
+  <button data-tab="data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>데이터</button>
+</nav>
+<div class="sheet" id="sheet"><div class="bar"><button class="iconbtn" id="sheetBack">← 닫기</button><h2 id="sheetTitle"></h2><span id="sheetAct"></span></div><div class="body" id="sheetBody"></div></div>
+<div class="toast" id="toast"></div>
+<input type="file" id="filePick" accept=".csv,text/csv,text/comma-separated-values,text/plain" style="display:none">
+<script>
+"use strict";
+/* ============ 스키마 (Google Sheets / _schema 와 동일) ============ */
+const SCHEMA_VERSION = 2;
+const LEDGER_COLS = ["event","direction","name","affiliation","relation","side","amount","gift","meal_tickets","method","date","thanked","note"];
+const EVENT_COLS  = ["event","event_type","host","event_date","note"];
+const OPT = {
+  direction:["받음","줌"],
+  relation:["가족","친척","친구","직장","지인","기타"],
+  side:["본인측","배우자측","공통","부모님"],
+  method:["현장","계좌이체","대리전달"],
+  thanked:["Y","N"],
+  event_type:["결혼식","돌잔치","장례식","생일","개업·집들이","기타"]
+};
+const KEY = "giftledger.db";
+
+/* ============ 저장소 (로컬, 기기 안에만 저장) ============ */
+const DB = {
+  data: null,
+  load(){
+    try{ this.data = JSON.parse(localStorage.getItem(KEY)); }catch(e){ this.data = null; }
+    if(!this.data || !Array.isArray(this.data.ledger)) this.data = {schema_version:SCHEMA_VERSION, nextId:1, events:[], ledger:[]};
+  },
+  save(){ localStorage.setItem(KEY, JSON.stringify(this.data)); },
+  id(){ return this.data.nextId++; },
+  // events
+  events(){ return this.data.events; },
+  eventByName(n){ return this.data.events.find(e=>e.event===n); },
+  upsertEvent(e){
+    if(e.id){
+      const old = this.data.events.find(x=>x.id===e.id);
+      if(old.event!==e.event) this.data.ledger.forEach(r=>{ if(r.event===old.event) r.event=e.event; });
+      Object.assign(old,e);
+    }else{ e.id=this.id(); this.data.events.push(e); }
+    this.save(); return e;
+  },
+  deleteEvent(id){
+    const e=this.data.events.find(x=>x.id===id); if(!e) return;
+    this.data.ledger=this.data.ledger.filter(r=>r.event!==e.event);
+    this.data.events=this.data.events.filter(x=>x.id!==id); this.save();
+  },
+  // ledger
+  ledger(){ return this.data.ledger; },
+  upsertRecord(r){
+    if(r.id){ Object.assign(this.data.ledger.find(x=>x.id===r.id),r); }
+    else{ r.id=this.id(); this.data.ledger.push(r); }
+    this.save(); return r;
+  },
+  deleteRecord(id){ this.data.ledger=this.data.ledger.filter(x=>x.id!==id); this.save(); },
+  replaceAll(table, rows){
+    rows.forEach(r=>r.id=this.id());
+    this.data[table]=rows; this.save();
+  }
+};
+
+/* ============ 유틸 ============ */
+const $ = s=>document.querySelector(s);
+const esc = s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const won = n=>(Number(n)||0).toLocaleString("ko-KR")+"원";
+const num = v=>{ const s=String(v??"").replace(/[,\s원]/g,""); if(s==="") return null; const n=Number(s); return Number.isFinite(n)?Math.round(n):NaN; };
+const normDate = v=>{
+  const s=String(v??"").trim(); if(!s) return "";
+  const m=s.match(/^(\d{4})[-./ ]\s*(\d{1,2})[-./ ]\s*(\d{1,2})\.?$/);
+  if(!m) return null;
+  const y=+m[1],mo=+m[2],d=+m[3]; const dt=new Date(y,mo-1,d);
+  if(dt.getFullYear()!==y||dt.getMonth()!==mo-1||dt.getDate()!==d) return null;
+  return `${y}-${String(mo).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+};
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),2200); }
+function personKey(r){ return r.name+"\u0001"+(r.affiliation||""); }
+function sumBy(rows,dir){ return rows.filter(r=>r.direction===dir).reduce((a,r)=>a+(Number(r.amount)||0),0); }
+function recordDate(r){ if(r.date) return r.date; const e=DB.eventByName(r.event); return e?e.event_date||"":""; }
+
+/* ============ 화면 상태 ============ */
+const state = { tab:"records", q:"", dir:"전체", evFilter:"", pq:"" };
+const TITLES = {records:"기록",events:"행사",people:"사람별 조회",data:"데이터"};
+
+function setTab(t){
+  state.tab=t;
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
+  $("#title").textContent=TITLES[t];
+  $("#fab").style.display=(t==="records"||t==="events")?"":"none";
+  render();
+  window.scrollTo(0,0);
+}
+function render(){
+  ({records:renderRecords,events:renderEvents,people:renderPeople,data:renderData})[state.tab]();
+}
+
+/* ---------- 기록 탭 ---------- */
+function filteredRecords(){
+  const q=state.q.trim().toLowerCase();
+  return DB.ledger().filter(r=>{
+    if(state.dir!=="전체"&&r.direction!==state.dir) return false;
+    if(state.evFilter&&r.event!==state.evFilter) return false;
+    if(q&&!(`${r.name} ${r.affiliation} ${r.event} ${r.note} ${r.gift}`.toLowerCase().includes(q))) return false;
+    return true;
+  }).sort((a,b)=>(recordDate(b)).localeCompare(recordDate(a))||b.id-a.id);
+}
+function renderRecords(){
+  const rows=filteredRecords();
+  const recv=sumBy(rows,"받음"), give=sumBy(rows,"줌");
+  $("#hsub").textContent=`전체 ${DB.ledger().length}건`;
+  const evOpts=DB.events().map(e=>`<option value="${esc(e.event)}" ${state.evFilter===e.event?"selected":""}>${esc(e.event)}</option>`).join("");
+  $("#main").innerHTML=`
+    <div class="search"><input id="q" type="search" placeholder="이름, 소속, 행사, 메모 검색" value="${esc(state.q)}"></div>
+    <div class="chips">${["전체","받음","줌"].map(d=>`<button class="chip ${state.dir===d?"on":""}" data-dir="${d}">${d}</button>`).join("")}
+      <select id="evf" style="width:auto;padding:6px 10px;border-radius:999px;font-size:13px"><option value="">모든 행사</option>${evOpts}</select></div>
+    <div class="stats">
+      <div class="stat"><div class="k">받은 합계</div><div class="v recv">${won(recv)}</div></div>
+      <div class="stat"><div class="k">준 합계</div><div class="v give">${won(give)}</div></div>
+      <div class="stat"><div class="k">건수</div><div class="v">${rows.length}건</div></div>
+    </div>
+    <div class="list">${rows.length?rows.map(recordItem).join(""):`<div class="empty">${DB.ledger().length?"조건에 맞는 기록이 없어요.":"아직 기록이 없어요.<br>먼저 <b>행사</b> 탭에서 행사를 등록한 뒤<br>+ 버튼으로 기록을 추가하세요."}</div>`}</div>`;
+  const qi=$("#q"); qi.oninput=()=>{state.q=qi.value; renderList();};
+  document.querySelectorAll("[data-dir]").forEach(b=>b.onclick=()=>{state.dir=b.dataset.dir;render();});
+  $("#evf").onchange=e=>{state.evFilter=e.target.value;render();};
+  bindItems();
+  function renderList(){ // 검색 중에는 입력칸 포커스를 유지하려고 목록만 갱신
+    const rows=filteredRecords();
+    $(".stats").innerHTML=`<div class="stat"><div class="k">받은 합계</div><div class="v recv">${won(sumBy(rows,"받음"))}</div></div><div class="stat"><div class="k">준 합계</div><div class="v give">${won(sumBy(rows,"줌"))}</div></div><div class="stat"><div class="k">건수</div><div class="v">${rows.length}건</div></div>`;
+    $(".list").innerHTML=rows.length?rows.map(recordItem).join(""):`<div class="empty">조건에 맞는 기록이 없어요.</div>`;
+    bindItems();
+  }
+}
+function recordItem(r){
+  const cls=r.direction==="받음"?"recv":"give";
+  const th=r.direction==="받음"?(r.thanked==="Y"?`<span class="badge ok">감사인사 완료</span>`:`<span class="badge no">감사인사 전</span>`):"";
+  const sub=[r.event, r.relation, recordDate(r)].filter(Boolean).map(esc).join(" · ");
+  return `<div class="item" data-rec="${r.id}"><div><div class="t">${esc(r.name)}${r.affiliation?` <span class="badge">${esc(r.affiliation)}</span>`:""}</div><div class="s">${sub}${th}${r.gift?`<br>선물: ${esc(r.gift)}`:""}</div></div>
+    <div class="amt ${cls}">${r.direction==="줌"?"-":"+"}${won(r.amount)}<small>${esc(r.direction)}</small></div></div>`;
+}
+function bindItems(){
+  document.querySelectorAll("[data-rec]").forEach(el=>el.onclick=()=>openRecordForm(DB.ledger().find(r=>r.id===+el.dataset.rec)));
+  document.querySelectorAll("[data-ev]").forEach(el=>el.onclick=()=>openEventDetail(+el.dataset.ev));
+  document.querySelectorAll("[data-person]").forEach(el=>el.onclick=()=>openPerson(el.dataset.person));
+}
+
+/* ---------- 행사 탭 ---------- */
+function renderEvents(){
+  const evs=[...DB.events()].sort((a,b)=>(b.event_date||"").localeCompare(a.event_date||""));
+  $("#hsub").textContent=`행사 ${evs.length}개`;
+  $("#main").innerHTML=`<div class="list">${evs.length?evs.map(e=>{
+      const rows=DB.ledger().filter(r=>r.event===e.event);
+      const rc=rows.filter(r=>r.direction==="받음").length, gc=rows.filter(r=>r.direction==="줌").length;
+      return `<div class="item" data-ev="${e.id}"><div><div class="t">${esc(e.event)}</div>
+        <div class="s">${[e.event_type,e.event_date,e.host?("주인공 "+e.host):"우리 행사"].filter(Boolean).map(esc).join(" · ")}</div></div>
+        <div class="amt">${rc?`<span class="recv">+${won(sumBy(rows,"받음"))}</span><small>받음 ${rc}명</small>`:""}${gc?`<span class="give">-${won(sumBy(rows,"줌"))}</span><small>줌 ${gc}건</small>`:""}${!rc&&!gc?`<small>기록 없음</small>`:""}</div></div>`;
+    }).join(""):`<div class="empty">등록된 행사가 없어요.<br>+ 버튼으로 행사를 추가하세요.<br>예: 우리 결혼식, 김민수 결혼식</div>`}</div>`;
+  bindItems();
+}
+function openEventDetail(id){
+  const e=DB.events().find(x=>x.id===id); if(!e) return;
+  const rows=DB.ledger().filter(r=>r.event===e.event).sort((a,b)=>a.name.localeCompare(b.name,"ko"));
+  const recv=rows.filter(r=>r.direction==="받음");
+  const grp=(field,opts)=>opts.map(o=>{const g=recv.filter(r=>r[field]===o); return g.length?`<div class="kv"><span>${o}</span><b>${g.length}명 · ${won(sumBy(g,"받음"))}</b></div>`:"";}).join("");
+  const thanked=recv.filter(r=>r.thanked==="Y").length;
+  openSheet(e.event,`
+    <div class="card"><p>${[e.event_type,e.event_date,e.host?("주인공 "+e.host):"우리 행사"].filter(Boolean).map(esc).join(" · ")}${e.note?`<br>${esc(e.note)}`:""}</p></div>
+    <div class="stats">
+      <div class="stat"><div class="k">받은 합계</div><div class="v recv">${won(sumBy(rows,"받음"))}</div></div>
+      <div class="stat"><div class="k">준 합계</div><div class="v give">${won(sumBy(rows,"줌"))}</div></div>
+      <div class="stat"><div class="k">감사인사 전</div><div class="v">${recv.length-thanked}명</div></div>
+    </div>
+    ${recv.length?`<div class="card"><h3>받은 기록 집계</h3>${grp("side",OPT.side)}${grp("relation",OPT.relation)}${grp("method",OPT.method)}</div>`:""}
+    <button class="btn" id="addHere">이 행사에 기록 추가</button>
+    <div class="sec">기록 ${rows.length}건</div>
+    <div class="list">${rows.map(recordItem).join("")||`<div class="empty">아직 기록이 없어요.</div>`}</div>`,
+    `<button class="iconbtn" id="evEdit">수정</button>`);
+  $("#evEdit").onclick=()=>openEventForm(e);
+  $("#addHere").onclick=()=>openRecordForm(null,{event:e.event});
+  bindItems();
+}
+
+/* ---------- 사람 탭 ---------- */
+function peopleGroups(){
+  const m=new Map();
+  DB.ledger().forEach(r=>{const k=personKey(r); if(!m.has(k)) m.set(k,{key:k,name:r.name,affiliation:r.affiliation,relation:r.relation,rows:[]}); m.get(k).rows.push(r);});
+  return [...m.values()];
+}
+function renderPeople(){
+  const q=state.pq.trim().toLowerCase();
+  const all=peopleGroups();
+  $("#hsub").textContent=`${all.length}명 (이름+소속 기준)`;
+  $("#main").innerHTML=`<div class="search"><input id="pq" type="search" placeholder="이름 또는 소속 검색" value="${esc(state.pq)}"></div><div class="list" id="plist"></div>`;
+  const draw=()=>{
+    const q=state.pq.trim().toLowerCase();
+    const g=all.filter(p=>!q||`${p.name} ${p.affiliation}`.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name,"ko"));
+    $("#plist").innerHTML=g.length?g.map(p=>{
+      const rv=sumBy(p.rows,"받음"), gv=sumBy(p.rows,"줌"), d=rv-gv;
+      return `<div class="item" data-person="${esc(p.key)}"><div><div class="t">${esc(p.name)}${p.affiliation?` <span class="badge">${esc(p.affiliation)}</span>`:""}</div>
+        <div class="s"><span class="recv">받음 ${won(rv)}</span> · <span class="give">줌 ${won(gv)}</span></div></div>
+        <div class="amt ${d>0?"recv":d<0?"give":""}">${d>0?"+":""}${won(d)}<small>차액 · ${p.rows.length}건</small></div></div>`;
+    }).join(""):`<div class="empty">${all.length?"검색 결과가 없어요.":"기록을 추가하면 사람별로 묶여서 보여요."}</div>`;
+    bindItems();
+  };
+  const pi=$("#pq"); pi.oninput=()=>{state.pq=pi.value;draw();}; draw();
+}
+function openPerson(key){
+  const p=peopleGroups().find(x=>x.key===key); if(!p) return;
+  const rows=p.rows.sort((a,b)=>recordDate(b).localeCompare(recordDate(a)));
+  const rv=sumBy(rows,"받음"), gv=sumBy(rows,"줌");
+  openSheet(p.name+(p.affiliation?` (${p.affiliation})`:""),`
+    <div class="stats">
+      <div class="stat"><div class="k">받은 합계</div><div class="v recv">${won(rv)}</div></div>
+      <div class="stat"><div class="k">준 합계</div><div class="v give">${won(gv)}</div></div>
+      <div class="stat"><div class="k">차액</div><div class="v">${won(rv-gv)}</div></div>
+    </div>
+    <button class="btn" id="addPerson">이 사람 기록 추가</button>
+    <div class="sec">주고받은 기록 ${rows.length}건</div>
+    <div class="list">${rows.map(recordItem).join("")}</div>`);
+  $("#addPerson").onclick=()=>openRecordForm(null,{name:p.name,affiliation:p.affiliation,relation:p.relation,side:rows[0].side});
+  bindItems();
+}
+
+/* ---------- 데이터 탭 ---------- */
+function renderData(){
+  $("#hsub").textContent=`스키마 v${SCHEMA_VERSION} · 기기 안에 저장`;
+  $("#main").innerHTML=`
+    <div class="card"><h3>현재 데이터</h3>
+      <div class="kv"><span>행사 (events)</span><b>${DB.events().length}개</b></div>
+      <div class="kv"><span>기록 (ledger)</span><b>${DB.ledger().length}건</b></div></div>
+    <div class="card"><h3>구글 시트에서 가져오기</h3>
+      <p>구글 시트에서 <b>events</b> 탭과 <b>ledger</b> 탭을 각각 <b>파일 → 다운로드 → CSV</b>로 받은 뒤 아래에서 선택하세요. 파일 머리글을 보고 어느 표인지 자동으로 알아봅니다. <b>events를 먼저</b> 가져오세요.</p>
+      <button class="btn" id="imp" style="margin-top:12px">CSV 가져오기</button>
+      <p class="hint">가져오면 해당 표의 기존 데이터는 모두 바뀝니다.</p></div>
+    <div class="card"><h3>내보내기</h3>
+      <p>구글 시트와 같은 열 구성의 CSV로 저장합니다. 백업이나 시트 업데이트에 쓰세요.</p>
+      <div class="row2" style="margin-top:12px"><button class="btn ghost" id="expE">events.csv</button><button class="btn ghost" id="expL">ledger.csv</button></div></div>
+    <div class="card"><h3>초기화</h3><p>기기에 저장된 모든 데이터를 지웁니다. 먼저 내보내기로 백업하세요.</p>
+      <button class="btn danger" id="wipe" style="margin-top:12px">모든 데이터 삭제</button></div>`;
+  $("#imp").onclick=()=>$("#filePick").click();
+  $("#expE").onclick=()=>exportCsv("events");
+  $("#expL").onclick=()=>exportCsv("ledger");
+  $("#wipe").onclick=()=>{ if(confirm("정말 모든 데이터를 지울까요? 되돌릴 수 없어요.")){ DB.data={schema_version:SCHEMA_VERSION,nextId:1,events:[],ledger:[]}; DB.save(); render(); toast("모두 지웠어요"); } };
+}
+
+/* ============ 폼 ============ */
+function openSheet(title, html, actions=""){
+  $("#sheetTitle").textContent=title; $("#sheetBody").innerHTML=html; $("#sheetAct").innerHTML=actions;
+  $("#sheet").classList.add("open"); $("#sheetBody").scrollTop=0;
+  sheetStack.push(title);
+}
+const sheetStack=[];
+function closeSheet(){ $("#sheet").classList.remove("open"); sheetStack.length=0; render(); }
+$("#sheetBack").onclick=closeSheet;
+
+function segHtml(name, opts, val, extraCls=""){
+  return `<div class="seg ${extraCls}" data-seg="${name}">${opts.map(o=>`<button type="button" data-v="${esc(o)}" class="${val===o?"on":""}">${esc(o)}</button>`).join("")}</div>`;
+}
+function bindSegs(root, allowEmpty){
+  root.querySelectorAll("[data-seg]").forEach(seg=>seg.querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    const was=b.classList.contains("on");
+    seg.querySelectorAll("button").forEach(x=>x.classList.remove("on"));
+    if(!(was&&allowEmpty.includes(seg.dataset.seg))) b.classList.add("on");
+  }));
+}
+const segVal=(root,name)=>{ const b=root.querySelector(`[data-seg="${name}"] button.on`); return b?b.dataset.v:""; };
+function fieldErr(root,name,msg){ const f=root.querySelector(`[data-f="${name}"]`); f.classList.add("bad"); f.querySelector(".err").textContent=msg; return false; }
+
+function openRecordForm(rec, preset={}){
+  if(!DB.events().length){ toast("먼저 행사 탭에서 행사를 등록하세요"); setTab("events"); closeSheet(); setTimeout(()=>openEventForm(null),50); return; }
+  const r=Object.assign({event:"",direction:"받음",name:"",affiliation:"",relation:"",side:"",amount:"",gift:"",meal_tickets:"",method:"",date:"",thanked:"N",note:""}, preset, rec||{});
+  const names=[...new Set(DB.ledger().map(x=>x.affiliation).filter(Boolean))];
+  openSheet(rec?"기록 수정":"기록 추가",`
+    <div class="field" data-f="event"><label>행사 <span class="req">*</span></label>
+      <select id="f_event"><option value="">선택하세요</option>${DB.events().map(e=>`<option ${r.event===e.event?"selected":""}>${esc(e.event)}</option>`).join("")}</select><div class="err"></div></div>
+    <div class="field" data-f="direction"><label>방향 <span class="req">*</span></label>${segHtml("direction",OPT.direction,r.direction,"dir")}<div class="err"></div></div>
+    <div class="row2">
+      <div class="field" data-f="name"><label>이름 <span class="req">*</span></label><input id="f_name" value="${esc(r.name)}" autocomplete="off"><div class="err"></div></div>
+      <div class="field" data-f="affiliation"><label>소속</label><input id="f_affiliation" value="${esc(r.affiliation)}" list="affs" autocomplete="off"><datalist id="affs">${names.map(n=>`<option value="${esc(n)}">`).join("")}</datalist><div class="err"></div></div>
+    </div>
+    <div class="field" data-f="amount"><label>금액(원) <span class="req">*</span></label><input id="f_amount" inputmode="numeric" value="${r.amount===""?"":esc(r.amount)}" placeholder="예: 100000"><div class="hint" id="amtHint"></div><div class="err"></div></div>
+    <div class="field" data-f="relation"><label>관계</label>${segHtml("relation",OPT.relation,r.relation)}<div class="err"></div></div>
+    <div class="field" data-f="side"><label>연결</label>${segHtml("side",OPT.side,r.side)}<div class="err"></div></div>
+    <div class="field" data-f="method"><label>전달방법</label>${segHtml("method",OPT.method,r.method)}<div class="err"></div></div>
+    <div class="row2">
+      <div class="field" data-f="meal_tickets"><label>식권(장)</label><input id="f_meal_tickets" inputmode="numeric" value="${esc(r.meal_tickets)}"><div class="err"></div></div>
+      <div class="field" data-f="thanked" id="thankedWrap"><label>감사인사</label>${segHtml("thanked",OPT.thanked,r.thanked)}<div class="err"></div></div>
+    </div>
+    <div class="field" data-f="gift"><label>선물</label><input id="f_gift" value="${esc(r.gift)}" placeholder="화환, 물품 등"><div class="err"></div></div>
+    <div class="field" data-f="date"><label>날짜</label><input id="f_date" value="${esc(r.date)}" placeholder="YYYY-MM-DD (행사 날짜와 다를 때만)"><div class="err"></div></div>
+    <div class="field" data-f="note"><label>비고</label><textarea id="f_note" rows="2">${esc(r.note)}</textarea><div class="err"></div></div>
+    <button class="btn" id="save">${rec?"저장":"추가"}</button>
+    ${rec?`<button class="btn danger" id="del" style="margin-top:10px">삭제</button>`:""}`);
+  const root=$("#sheetBody");
+  bindSegs(root,["relation","side","method"]);
+  const amt=$("#f_amount"); const hint=()=>{const n=num(amt.value); $("#amtHint").textContent=(n&&n>0)?won(n):"";}; amt.oninput=hint; hint();
+  const syncThanked=()=>{$("#thankedWrap").style.visibility=segVal(root,"direction")==="받음"?"visible":"hidden";};
+  root.querySelector('[data-seg="direction"]').addEventListener("click",syncThanked); syncThanked();
+  $("#save").onclick=()=>{
+    root.querySelectorAll(".field").forEach(f=>f.classList.remove("bad"));
+    const out={
+      event:$("#f_event").value, direction:segVal(root,"direction"), name:$("#f_name").value.trim(),
+      affiliation:$("#f_affiliation").value.trim(), relation:segVal(root,"relation"), side:segVal(root,"side"),
+      amount:num($("#f_amount").value), gift:$("#f_gift").value.trim(), meal_tickets:num($("#f_meal_tickets").value),
+      method:segVal(root,"method"), date:normDate($("#f_date").value), thanked:"", note:$("#f_note").value.trim()
+    };
+    out.thanked=out.direction==="받음"?(segVal(root,"thanked")||"N"):"";
+    let ok=true;
+    if(!out.event) ok=fieldErr(root,"event","행사를 선택하세요");
+    if(!out.direction) ok=fieldErr(root,"direction","받음 또는 줌을 고르세요");
+    if(!out.name) ok=fieldErr(root,"name","이름을 입력하세요");
+    if(out.amount===null) ok=fieldErr(root,"amount","금액을 입력하세요 (현금이 없으면 0)");
+    else if(Number.isNaN(out.amount)||out.amount<0) ok=fieldErr(root,"amount","0 이상의 숫자만 입력하세요");
+    if(Number.isNaN(out.meal_tickets)||out.meal_tickets<0) ok=fieldErr(root,"meal_tickets","0 이상 숫자");
+    if(out.date===null) ok=fieldErr(root,"date","2026-11-14 형식으로 입력하세요");
+    if(!ok){ root.querySelector(".field.bad").scrollIntoView({block:"center"}); return; }
+    if(out.meal_tickets===null) out.meal_tickets="";
+    const dup=DB.ledger().find(x=>x.id!==(rec&&rec.id)&&x.event===out.event&&x.direction===out.direction&&x.name===out.name&&(x.affiliation||"")===out.affiliation);
+    if(dup&&!confirm(`${out.event}에 ${out.name}${out.affiliation?`(${out.affiliation})`:""}의 '${out.direction}' 기록이 이미 있어요. 그래도 저장할까요?`)) return;
+    if(rec) out.id=rec.id;
+    DB.upsertRecord(out);
+    toast(rec?"수정했어요":"추가했어요");
+    closeSheet();
+  };
+  if(rec) $("#del").onclick=()=>{ if(confirm(`${rec.name}의 기록을 삭제할까요?`)){ DB.deleteRecord(rec.id); toast("삭제했어요"); closeSheet(); } };
+  if(!rec) setTimeout(()=>(r.name?$("#f_amount"):$("#f_name")).focus(),100);
+}
+
+function openEventForm(ev){
+  const e=Object.assign({event:"",event_type:"결혼식",host:"",event_date:"",note:""},ev||{});
+  const cnt=ev?DB.ledger().filter(r=>r.event===ev.event).length:0;
+  openSheet(ev?"행사 수정":"행사 추가",`
+    <div class="field" data-f="event"><label>행사명 <span class="req">*</span></label><input id="e_event" value="${esc(e.event)}" placeholder="예: 우리 결혼식, 김민수 결혼식"><div class="err"></div></div>
+    <div class="field" data-f="event_type"><label>종류 <span class="req">*</span></label>${segHtml("event_type",OPT.event_type,e.event_type)}<div class="err"></div></div>
+    <div class="row2">
+      <div class="field" data-f="host"><label>주인공</label><input id="e_host" value="${esc(e.host)}" placeholder="비우면 우리 행사"><div class="err"></div></div>
+      <div class="field" data-f="event_date"><label>날짜</label><input id="e_date" value="${esc(e.event_date)}" placeholder="YYYY-MM-DD"><div class="err"></div></div>
+    </div>
+    <div class="field" data-f="note"><label>메모</label><textarea id="e_note" rows="2">${esc(e.note)}</textarea><div class="err"></div></div>
+    <button class="btn" id="esave">${ev?"저장":"추가"}</button>
+    ${ev?`<button class="btn danger" id="edel" style="margin-top:10px">행사 삭제${cnt?` (기록 ${cnt}건 포함)`:""}</button>`:""}`);
+  const root=$("#sheetBody"); bindSegs(root,[]);
+  $("#esave").onclick=()=>{
+    root.querySelectorAll(".field").forEach(f=>f.classList.remove("bad"));
+    const out={event:$("#e_event").value.trim(),event_type:segVal(root,"event_type"),host:$("#e_host").value.trim(),event_date:normDate($("#e_date").value),note:$("#e_note").value.trim()};
+    let ok=true;
+    if(!out.event) ok=fieldErr(root,"event","행사명을 입력하세요");
+    else if(DB.events().some(x=>x.event===out.event&&(!ev||x.id!==ev.id))) ok=fieldErr(root,"event","같은 이름의 행사가 이미 있어요");
+    if(!out.event_type) ok=fieldErr(root,"event_type","종류를 고르세요");
+    if(out.event_date===null) ok=fieldErr(root,"event_date","2026-11-14 형식");
+    if(!ok) return;
+    if(ev) out.id=ev.id;
+    DB.upsertEvent(out);
+    toast(ev?(ev.event!==out.event&&cnt?`수정했어요 (기록 ${cnt}건의 행사명도 함께 바꿈)`:"수정했어요"):"추가했어요");
+    closeSheet();
+  };
+  if(ev) $("#edel").onclick=()=>{ if(confirm(cnt?`'${ev.event}' 행사와 기록 ${cnt}건을 모두 삭제할까요?`:`'${ev.event}' 행사를 삭제할까요?`)){ DB.deleteEvent(ev.id); toast("삭제했어요"); closeSheet(); } };
+  if(!ev) setTimeout(()=>$("#e_event").focus(),100);
+}
+
+/* ============ CSV ============ */
+function parseCsv(text){
+  text=text.replace(/^﻿/,"");
+  const rows=[]; let row=[], f="", q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; }
+    else if(c==='"') q=true;
+    else if(c===','){ row.push(f); f=""; }
+    else if(c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n') i++; row.push(f); rows.push(row); row=[]; f=""; }
+    else f+=c;
+  }
+  if(f!==""||row.length){ row.push(f); rows.push(row); }
+  return rows.filter(r=>r.some(x=>x.trim()!==""));
+}
+function toCsv(cols, rows){
+  const cell=v=>{ const s=String(v??""); return /[",\n\r]/.test(s)?`"${s.replace(/"/g,'""')}"`:s; };
+  return "﻿"+[cols.join(","),...rows.map(r=>cols.map(c=>cell(r[c])).join(","))].join("\r\n");
+}
+function importCsv(text){
+  const rows=parseCsv(text); if(!rows.length) throw new Error("빈 파일이에요");
+  const head=rows[0].map(h=>h.trim());
+  let table, cols;
+  if(head.includes("direction")&&head.includes("name")){ table="ledger"; cols=LEDGER_COLS; }
+  else if(head.includes("event_type")){ table="events"; cols=EVENT_COLS; }
+  else throw new Error("ledger나 events 탭의 CSV가 아니에요. 1행 머리글을 확인하세요.");
+  const idx=Object.fromEntries(cols.map(c=>[c,head.indexOf(c)]));
+  const out=[], skipped=[];
+  rows.slice(1).forEach((r,i)=>{
+    const o={}; cols.forEach(c=>o[c]=idx[c]>=0?(r[idx[c]]??"").trim():"");
+    if(table==="ledger"){
+      if(!o.name) return; // 이름 없는 행은 무시
+      o.amount=num(o.amount); o.meal_tickets=num(o.meal_tickets);
+      if(o.amount===null) o.amount=0;
+      if(Number.isNaN(o.amount)||Number.isNaN(o.meal_tickets)){ skipped.push(i+2); return; }
+      if(o.meal_tickets===null) o.meal_tickets="";
+      const d=normDate(o.date); o.date=d===null?"":d;
+      if(o.direction!=="받음"&&o.direction!=="줌"){ skipped.push(i+2); return; }
+    }else{
+      if(!o.event) return;
+      const d=normDate(o.event_date); o.event_date=d===null?"":d;
+    }
+    out.push(o);
+  });
+  return {table, rows:out, skipped};
+}
+function exportCsv(table){
+  const cols=table==="ledger"?LEDGER_COLS:EVENT_COLS;
+  const csv=toCsv(cols, DB.data[table]);
+  const d=new Date(); const stamp=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`;
+  const name=`GiftMoney_${table}_${stamp}.csv`;
+  if(window.Android&&Android.saveFile){ const res=Android.saveFile(name,csv); toast(res||"다운로드 폴더에 저장했어요"); return; }
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"})); a.download=name; a.click();
+  toast(name+" 저장");
+}
+$("#filePick").onchange=async e=>{
+  const file=e.target.files[0]; e.target.value=""; if(!file) return;
+  try{
+    const res=importCsv(await file.text());
+    const label=res.table==="ledger"?"기록(ledger)":"행사(events)";
+    if(!confirm(`${label} ${res.rows.length}건을 가져올까요?\n기존 ${label} ${DB.data[res.table].length}건은 바뀝니다.${res.skipped.length?`\n\n형식이 맞지 않아 건너뛸 행: ${res.skipped.slice(0,10).join(", ")}${res.skipped.length>10?" 외":""}`:""}`)) return;
+    DB.replaceAll(res.table,res.rows);
+    if(res.table==="ledger"){
+      const missing=[...new Set(res.rows.map(r=>r.event).filter(n=>n&&!DB.eventByName(n)))];
+      if(missing.length){ missing.forEach(n=>DB.upsertEvent({event:n,event_type:"기타",host:"",event_date:"",note:"기록 가져오기 중 자동 추가"})); toast(`가져왔어요. events에 없던 행사 ${missing.length}개는 자동 추가했어요`); }
+      else toast(`${label} ${res.rows.length}건을 가져왔어요`);
+    } else toast(`${label} ${res.rows.length}건을 가져왔어요`);
+    render();
+  }catch(err){ alert("가져오기 실패: "+err.message); }
+};
+
+/* ============ 시작 ============ */
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+$("#fab").onclick=()=>state.tab==="events"?openEventForm(null):openRecordForm(null, state.evFilter?{event:state.evFilter}:{});
+// 안드로이드 뒤로가기: 열린 화면이 있으면 닫고 true, 없으면 false
+window.handleBack=()=>{ if($("#sheet").classList.contains("open")){ closeSheet(); return true; } if(state.tab!=="records"){ setTab("records"); return true; } return false; };
+DB.load(); setTab("records");
+</script>
+</body>
+</html>
